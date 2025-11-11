@@ -9,11 +9,16 @@
     "lint": "next lint",
     "setup:supabase": "node setup-supabase.js",
     "setup:complete": "npm run db:generate && npm run db:push && npm run db:seed",
+    "deploy": "./deploy.sh",
+    "deploy:quick": "git add . && git commit -m '🔄 Quick update' && git push origin main",
+    "deploy:build": "npm run build && ./deploy.sh '🚀 Production build update'",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "git:status": "git status",
+    "git:pull": "git pull origin main"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",

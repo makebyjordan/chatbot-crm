@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Customer {
+  id            String         @id @default(cuid())
+  name          String
+  email         String         @unique
+  phone         String?        @unique
+  company       String?
+  status        CustomerStatus @default(LEAD)
+  source        String         @default("chat") // chat, sheets, manual
+  notes         String?
+  
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  conversations Conversation[]
+  sheetSyncs    SheetSync[]
+  
+  @@index([email])
+  @@index([phone])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum CustomerStatus {
+  LEAD
+  CONTACT
+  QUALIFIED
+  CUSTOMER
+  INACTIVE
+}
+
+model Conversation {
+  id            String   @id @default(cuid())
+  customerId    String?
+  customer      Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  
+  userMessage   String
+  aiResponse    String
+  intent        String?  // greeting, register, inquiry, etc
+  platform      String   @default("webchat")
+  
+  createdAt     DateTime @default(now())
+  
+  @@index([customerId])
+  @@index([createdAt])
+  @@index([platform])
+}
+
+model SheetSync {
+  id            String   @id @default(cuid())
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  sheetId       String   // Google Sheets ID
+  rowNumber     Int?     // Número de fila en Sheets
+  lastSyncedAt  DateTime @default(now())
+  syncStatus    String   @default("synced") // synced, pending, error
+  syncError     String?
+  
+  data          Json     // Data snapshot from sheets
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([customerId])
+  @@index([sheetId])
+  @@index([syncStatus])
+}
+
+model WebhookLog {
+  id            String   @id @default(cuid())
+  endpoint      String
+  method        String
+  payload       Json
+  headers       Json?
+  statusCode    Int
+  response      Json?
+  error         String?
+  
+  createdAt     DateTime @default(now())
+  
+  @@index([endpoint])
+  @@index([createdAt])
+  @@index([statusCode])
+}
+
+model ChatSession {
+  id            String   @id @default(cuid())
+  sessionToken  String   @unique @default(cuid())
+  customerId    String?
+  
+  isActive      Boolean  @default(true)
+  lastMessageAt DateTime @default(now())
+  
+  metadata      Json?    // Browser info, IP, etc
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([sessionToken])
+  @@index([isActive])
+  @@index([lastMessageAt])
+}
